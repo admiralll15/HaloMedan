@@ -477,8 +477,8 @@ class RouteService
                     $dist = self::haversine(
                         $this->nodeMap[$prevNodeId]->latitude,
                         $this->nodeMap[$prevNodeId]->longitude,
-                        $lngG,
-                        $latG
+                        $latG,
+                        $lngG
                     );
                     $this->addEdge($prevNodeId, $goalId, $dist, $goal['name']);
                 }

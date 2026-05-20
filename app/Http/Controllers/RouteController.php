@@ -298,4 +298,48 @@ class RouteController extends Controller
 
         return response()->json($formatted);
     }
+
+    /**
+     * Reverse geocode coordinates to get a human-readable address via Nominatim
+     */
+    public function reverseGeocode(Request $request)
+    {
+        $lat = $request->query('lat');
+        $lng = $request->query('lng');
+
+        if (!$lat || !$lng || !is_numeric($lat) || !is_numeric($lng)) {
+            return response()->json(['name' => 'Lokasi Saya'], 200);
+        }
+
+        $cacheKey = 'reverse_geo_' . md5($lat . '_' . $lng);
+
+        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 86400, function () use ($lat, $lng) {
+            try {
+                $url = "https://nominatim.openstreetmap.org/reverse?format=json&lat={$lat}&lon={$lng}&zoom=18&addressdetails=1";
+                
+                $response = \Illuminate\Support\Facades\Http::withOptions([
+                    'verify' => false
+                ])->withHeaders([
+                    'User-Agent' => 'HaloMedan/2.0 (admin@halomedan.com)'
+                ])->timeout(3)->get($url);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $displayName = $data['display_name'] ?? null;
+
+                    if ($displayName) {
+                        // Shorten: take first 3 parts of the comma-separated name
+                        $parts = array_slice(explode(',', $displayName), 0, 3);
+                        return ['name' => trim(implode(',', $parts))];
+                    }
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Reverse geocode failed: " . $e->getMessage());
+            }
+
+            return ['name' => 'Lokasi Saya'];
+        });
+
+        return response()->json($result);
+    }
 }
