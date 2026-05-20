@@ -51,6 +51,26 @@ export default function MapView({
         }));
     }, [results, activeRoute]);
 
+    const activeResult = useMemo(() => {
+        if (activeRoute === null || !results?.length) return null;
+        return results[activeRoute] || null;
+    }, [results, activeRoute]);
+
+    const exploredCircleMarkers = useMemo(() => {
+        if (!activeResult || !activeResult.explored_nodes) return [];
+        return activeResult.explored_nodes;
+    }, [activeResult]);
+
+    const pathCircleMarkers = useMemo(() => {
+        if (!activeResult || !activeResult.path) return [];
+        return activeResult.path;
+    }, [activeResult]);
+
+    const activeColor = useMemo(() => {
+        if (!activeResult) return '#64748b';
+        return ROUTE_COLORS[activeResult.algorithm] || '#64748b';
+    }, [activeResult]);
+
     const currentSimPosition = useMemo(() => {
         if (!isSimulating && !simFinished) return null;
         return activePath?.[simIndex] || null;
@@ -198,12 +218,32 @@ export default function MapView({
 
                 {graphEdges.map((edge, i) => <Polyline key={`edge-${i}`} positions={[edge.from, edge.to]} pathOptions={{ color: '#cbd5e1', weight: 1.5, opacity: 0.5 }} />)}
 
+                {routePolylines.filter(r => !r.active).map(r => (
+                    <Polyline key={`route-${r.index}`} positions={r.positions} eventHandlers={{ click: () => onSelectRoute?.(r.index) }}
+                        pathOptions={{ color: r.color, weight: 6, opacity: 0.35, dashArray: r.dash, className: 'clickable-polyline' }} />
+                ))}
+                {routePolylines.filter(r => r.active).map(r => (
+                    <Polyline key={`route-active-${r.index}`} positions={r.positions} eventHandlers={{ click: () => onSelectRoute?.(r.index) }}
+                        pathOptions={{ color: r.color, weight: 8, opacity: 0.95, dashArray: r.dash, className: 'clickable-polyline' }} />
+                ))}
+
                 {nodes.map(node => {
                     const isStart = startCoords && Math.abs(node.latitude - startCoords[0]) < 0.0001 && Math.abs(node.longitude - startCoords[1]) < 0.0001;
                     const isGoal = goalCoords && Math.abs(node.latitude - goalCoords[0]) < 0.0001 && Math.abs(node.longitude - goalCoords[1]) < 0.0001;
+                    
+                    // Cek apakah node landmark ini sedang dievaluasi oleh algoritma
+                    const isExplored = !isSimulating && exploredCircleMarkers.some(exp => 
+                        Math.abs(node.latitude - exp.latitude) < 0.0001 && 
+                        Math.abs(node.longitude - exp.longitude) < 0.0001
+                    );
+
+                    // Jika sedang dievaluasi dan bukan start/goal, sembunyikan marker landmark statisnya
+                    // agar tidak tumpang tindih (tertimpa) dengan marker kuning evaluasi
+                    if (isExplored && !isStart && !isGoal) return null;
+
                     return (
-                        <CircleMarker key={`node-${node.id}`} center={[node.latitude, node.longitude]} radius={isStart || isGoal ? 8 : 5}
-                            pathOptions={{ fillColor: isStart ? '#059669' : isGoal ? '#ef4444' : '#64748b', fillOpacity: isStart || isGoal ? 1 : 0.7, color: '#fff', weight: isStart || isGoal ? 3 : 2 }}>
+                        <CircleMarker key={`node-${node.id}`} center={[node.latitude, node.longitude]} radius={isStart || isGoal ? 8 : 6}
+                            pathOptions={{ fillColor: isStart ? '#059669' : isGoal ? '#ef4444' : '#6366f1', fillOpacity: isStart || isGoal ? 1 : 0.85, color: '#fff', weight: isStart || isGoal ? 3 : 2 }}>
                             <Tooltip direction="top" offset={[0, -8]} className="node-tooltip" permanent={isStart || isGoal}>
                                 {isStart && <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#059669', marginRight: 6 }}></span>}
                                 {isGoal && <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#ef4444', marginRight: 6 }}></span>}
@@ -230,14 +270,57 @@ export default function MapView({
                     </CircleMarker>
                 )}
 
-                {routePolylines.filter(r => !r.active).map(r => (
-                    <Polyline key={`route-${r.index}`} positions={r.positions} eventHandlers={{ click: () => onSelectRoute?.(r.index) }}
-                        pathOptions={{ color: r.color, weight: 6, opacity: 0.35, dashArray: r.dash, className: 'clickable-polyline' }} />
-                ))}
-                {routePolylines.filter(r => r.active).map(r => (
-                    <Polyline key={`route-active-${r.index}`} positions={r.positions} eventHandlers={{ click: () => onSelectRoute?.(r.index) }}
-                        pathOptions={{ color: r.color, weight: 8, opacity: 0.95, dashArray: r.dash, className: 'clickable-polyline' }} />
-                ))}
+                {/* Visualisasi Node Ter-eksplorasi (Explored Nodes) - Diletakkan paling bawah agar digambar di atas garis rute */}
+                {!isSimulating && exploredCircleMarkers.map((node, idx) => {
+                    const isStart = startCoords && Math.abs(node.latitude - startCoords[0]) < 0.0001 && Math.abs(node.longitude - startCoords[1]) < 0.0001;
+                    const isGoal = goalCoords && Math.abs(node.latitude - goalCoords[0]) < 0.0001 && Math.abs(node.longitude - goalCoords[1]) < 0.0001;
+                    if (isStart || isGoal) return null;
+
+                    return (
+                        <CircleMarker 
+                            key={`explored-${node.id || idx}`} 
+                            center={[node.latitude, node.longitude]} 
+                            radius={6}
+                            pathOptions={{ 
+                                fillColor: '#ffff00', // Neon Yellow (Sangat Kontras)
+                                fillOpacity: 1, 
+                                color: activeColor, // Border warna algoritma
+                                weight: 2.5, 
+                                opacity: 1 
+                            }}
+                        >
+                            <Tooltip direction="top" offset={[0, -6]}>
+                                <span>Titik Dievaluasi ({activeResult?.algorithm}): Ke-{idx + 1}</span>
+                            </Tooltip>
+                        </CircleMarker>
+                    );
+                })}
+
+                {/* Visualisasi Node Rute Akhir (Path Nodes) - Di atas rute aktif */}
+                {!isSimulating && pathCircleMarkers.map((node, idx) => {
+                    const isStart = startCoords && Math.abs(node.latitude - startCoords[0]) < 0.0001 && Math.abs(node.longitude - startCoords[1]) < 0.0001;
+                    const isGoal = goalCoords && Math.abs(node.latitude - goalCoords[0]) < 0.0001 && Math.abs(node.longitude - goalCoords[1]) < 0.0001;
+                    if (isStart || isGoal) return null;
+
+                    return (
+                        <CircleMarker 
+                            key={`path-node-${node.id || idx}`} 
+                            center={[node.latitude, node.longitude]} 
+                            radius={5}
+                            pathOptions={{ 
+                                fillColor: '#ffffff', // Putih (Sangat Kontras di atas garis hijau/biru)
+                                fillOpacity: 1, 
+                                color: activeColor, // Border warna algoritma
+                                weight: 2.5, 
+                                opacity: 1 
+                            }}
+                        >
+                            <Tooltip direction="top" offset={[0, -5]}>
+                                <span>Rute Akhir: {node.name || 'Jalan'}</span>
+                            </Tooltip>
+                        </CircleMarker>
+                    );
+                })}
 
                 {currentSimPosition && carIcon && <Marker position={currentSimPosition} icon={carIcon} />}
             </MapContainer>

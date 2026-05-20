@@ -133,7 +133,10 @@ class RouteService
                     $currentPath,
                     $currentCost,
                     $nodesVisited,
-                    ($endTime - $startTime) * 1000
+                    ($endTime - $startTime) * 1000,
+                    true,
+                    '',
+                    array_keys($explored)
                 );
             }
 
@@ -150,7 +153,7 @@ class RouteService
             }
         }
 
-        return $this->buildResult('UCS', [], 0, $nodesVisited, (microtime(true) - $startTime) * 1000, false);
+        return $this->buildResult('UCS', [], 0, $nodesVisited, (microtime(true) - $startTime) * 1000, false, '', array_keys($explored));
     }
 
     /**
@@ -202,7 +205,10 @@ class RouteService
                     $currentPath,
                     $currentG,
                     $nodesVisited,
-                    ($endTime - $startTime) * 1000
+                    ($endTime - $startTime) * 1000,
+                    true,
+                    '',
+                    array_keys($explored)
                 );
             }
 
@@ -234,7 +240,7 @@ class RouteService
             }
         }
 
-        return $this->buildResult('A*', [], 0, $nodesVisited, (microtime(true) - $startTime) * 1000, false);
+        return $this->buildResult('A*', [], 0, $nodesVisited, (microtime(true) - $startTime) * 1000, false, '', array_keys($explored));
     }
 
     /**
@@ -304,7 +310,8 @@ class RouteService
                     false,
                     $bestNeighbor === null 
                         ? 'Terjebak di lokal optimum (tidak ada tetangga yang belum dikunjungi)' 
-                        : 'Terjebak di lokal optimum (semua tetangga lebih jauh dari tujuan)'
+                        : 'Terjebak di lokal optimum (semua tetangga lebih jauh dari tujuan)',
+                    array_keys($visited)
                 );
             }
 
@@ -325,7 +332,9 @@ class RouteService
             $totalDistance,
             $nodesVisited,
             ($endTime - $startTime) * 1000,
-            $currentNode === $goalId
+            $currentNode === $goalId,
+            '',
+            array_keys($visited)
         );
     }
 
@@ -557,7 +566,8 @@ class RouteService
         int $nodesVisited,
         float $executionTimeMs,
         bool $found = true,
-        string $message = ''
+        string $message = '',
+        array $exploredIds = []
     ): array {
         $pathDetails = [];
         foreach ($pathIds as $nodeId) {
@@ -572,10 +582,23 @@ class RouteService
             }
         }
 
+        $exploredDetails = [];
+        foreach ($exploredIds as $nodeId) {
+            if (isset($this->nodeMap[$nodeId])) {
+                $node = $this->nodeMap[$nodeId];
+                $exploredDetails[] = [
+                    'id' => $node->id,
+                    'latitude' => $node->latitude,
+                    'longitude' => $node->longitude,
+                ];
+            }
+        }
+
         return [
             'algorithm' => $algorithm,
             'found' => $found,
             'path' => $pathDetails,
+            'explored_nodes' => $exploredDetails,
             'total_distance_km' => round($totalDistance, 2),
             'nodes_visited' => $nodesVisited,
             'execution_time_ms' => round($executionTimeMs, 3),

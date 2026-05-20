@@ -461,7 +461,7 @@ export default function Sidebar({
                                         </div>
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                                             <Stat label="Jarak" value={r.total_distance_km} unit="km" />
-                                            <Stat label="Titik Dilalui" value={r.nodes_visited} />
+                                            <Stat label="Titik Dievaluasi" value={r.nodes_visited} />
                                             <Stat label="Waktu" value={r.execution_time_ms} unit="ms" />
                                         </div>
                                         {activeRoute === i && r.path?.length > 0 && (
