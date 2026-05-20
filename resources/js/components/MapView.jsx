@@ -1,6 +1,8 @@
 import React, { useMemo, useEffect } from 'react';
 import { MapContainer, TileLayer, Polyline, CircleMarker, Tooltip, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import { X, Car, ArrowUp, ArrowUpRight, ArrowUpLeft, MapPin } from 'lucide-react';
+
 
 const ROUTE_COLORS = { 'UCS': '#059669', 'A*': '#2563eb', 'Hill Climbing': '#d97706' };
 const ROUTE_DASH = { 'UCS': null, 'A*': '12 6', 'Hill Climbing': '4 8' };
@@ -34,7 +36,11 @@ function ChangeView({ center, zoom, bounds, isSimulating }) {
     return null;
 }
 
-export default function MapView({ nodes, graphEdges, results, activeRoute, startNode, goalNode, onSelectRoute, isSimulating, setIsSimulating, simIndex, activePath, activeNodeIndex, simFinished }) {
+export default function MapView({ 
+    nodes, graphEdges, results, activeRoute, startNode, goalNode, onSelectRoute, 
+    isSimulating, setIsSimulating, simIndex, activePath, activeNodeIndex, simFinished,
+    setSimFinished, setSimIndex 
+}) {
     const routePolylines = useMemo(() => {
         if (!results?.length) return [];
         return results.map((r, i) => ({
@@ -117,8 +123,25 @@ export default function MapView({ nodes, graphEdges, results, activeRoute, start
     const carIcon = useMemo(() => {
         if (typeof window === 'undefined') return null;
         return L.divIcon({
-            html: `<div style="font-size:28px;transform:rotate(${carAngle}deg);transition:transform 0.15s ease-out;width:44px;height:44px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">🚘</div>`,
-            className: 'custom-car-marker', iconSize: [44, 44], iconAnchor: [22, 22],
+            html: `
+                <div style="
+                    width: 36px; height: 36px;
+                    background: #2563eb;
+                    border: 3px solid #ffffff;
+                    border-radius: 50%;
+                    box-shadow: 0 4px 10px rgba(37,99,235,0.4);
+                    display: flex; align-items: center; justify-content: center;
+                    transform: rotate(${carAngle}deg);
+                    transition: transform 0.15s ease-out;
+                ">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="18 15 12 9 6 15"/>
+                    </svg>
+                </div>
+            `,
+            className: 'custom-car-marker',
+            iconSize: [36, 36],
+            iconAnchor: [18, 18],
         });
     }, [carAngle]);
 
@@ -143,13 +166,16 @@ export default function MapView({ nodes, graphEdges, results, activeRoute, start
             ? r.path[activeNodeIndex].name.split(',')[0]
             : startNode?.name?.split(',')[0] || '';
         // Direction arrow based on angle change
-        let arrow = '⬆️';
-        if (simFinished || simIndex >= (activePath?.length || 0) - 2) { arrow = '📍'; }
+        let arrow = <ArrowUp size={24} color="#fff" />;
+        if (simFinished || simIndex >= (activePath?.length || 0) - 2) { 
+            arrow = <MapPin size={24} color="#ef4444" fill="#ef4444" />; 
+        }
         else if (activePath?.[simIndex + 1] && activePath?.[simIndex + 3]) {
             const n = activePath[simIndex + 1], f = activePath[simIndex + 3];
             const futAngle = Math.atan2(f[1] - n[1], f[0] - n[0]) * (180 / Math.PI);
             let diff = futAngle - carAngle; if (diff > 180) diff -= 360; if (diff < -180) diff += 360;
-            if (diff > 30) arrow = '↗️'; else if (diff < -30) arrow = '↖️';
+            if (diff > 30) arrow = <ArrowUpRight size={24} color="#fff" />; 
+            else if (diff < -30) arrow = <ArrowUpLeft size={24} color="#fff" />;
         }
         return { totalDist, totalDurMin, remMin, remKm, arrival, nextStreet, currentStreet, arrow, algorithm: r.algorithm, progress };
     }, [isSimulating, simFinished, results, activeRoute, activePath, simIndex, activeNodeIndex, goalNode, startNode, carAngle]);
@@ -159,6 +185,11 @@ export default function MapView({ nodes, graphEdges, results, activeRoute, start
             <style>{`
                 .clickable-polyline { cursor: pointer !important; }
                 .custom-car-marker { background: none !important; border: none !important; }
+                @keyframes pulse-dot {
+                    0% { transform: scale(0.9); opacity: 0.6; }
+                    50% { transform: scale(1.1); opacity: 1; }
+                    100% { transform: scale(0.9); opacity: 0.6; }
+                }
             `}</style>
 
             <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} style={{ width: '100%', height: '100%' }} zoomControl={!isSimulating}>
@@ -174,7 +205,9 @@ export default function MapView({ nodes, graphEdges, results, activeRoute, start
                         <CircleMarker key={`node-${node.id}`} center={[node.latitude, node.longitude]} radius={isStart || isGoal ? 8 : 5}
                             pathOptions={{ fillColor: isStart ? '#059669' : isGoal ? '#ef4444' : '#64748b', fillOpacity: isStart || isGoal ? 1 : 0.7, color: '#fff', weight: isStart || isGoal ? 3 : 2 }}>
                             <Tooltip direction="top" offset={[0, -8]} className="node-tooltip" permanent={isStart || isGoal}>
-                                {isStart && '🟢 '}{isGoal && '🔴 '}{node.name}
+                                {isStart && <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#059669', marginRight: 6 }}></span>}
+                                {isGoal && <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#ef4444', marginRight: 6 }}></span>}
+                                {node.name}
                             </Tooltip>
                         </CircleMarker>
                     );
@@ -182,12 +215,18 @@ export default function MapView({ nodes, graphEdges, results, activeRoute, start
 
                 {startCoords && !nodes.some(n => Math.abs(n.latitude - startCoords[0]) < 0.0001 && Math.abs(n.longitude - startCoords[1]) < 0.0001) && (
                     <CircleMarker center={startCoords} radius={8} pathOptions={{ fillColor: '#059669', fillOpacity: 1, color: '#fff', weight: 3 }}>
-                        <Tooltip direction="top" offset={[0, -8]} permanent>🟢 {startNode?.name?.split(',')[0] || 'Titik Awal'}</Tooltip>
+                        <Tooltip direction="top" offset={[0, -8]} permanent>
+                            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#059669', marginRight: 6 }}></span>
+                            {startNode?.name?.split(',')[0] || 'Titik Awal'}
+                        </Tooltip>
                     </CircleMarker>
                 )}
                 {goalCoords && !nodes.some(n => Math.abs(n.latitude - goalCoords[0]) < 0.0001 && Math.abs(n.longitude - goalCoords[1]) < 0.0001) && (
                     <CircleMarker center={goalCoords} radius={8} pathOptions={{ fillColor: '#ef4444', fillOpacity: 1, color: '#fff', weight: 3 }}>
-                        <Tooltip direction="top" offset={[0, -8]} permanent>🔴 {goalNode?.name?.split(',')[0] || 'Tujuan'}</Tooltip>
+                        <Tooltip direction="top" offset={[0, -8]} permanent>
+                            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#ef4444', marginRight: 6 }}></span>
+                            {goalNode?.name?.split(',')[0] || 'Tujuan'}
+                        </Tooltip>
                     </CircleMarker>
                 )}
 
@@ -278,13 +317,25 @@ export default function MapView({ nodes, graphEdges, results, activeRoute, start
                         fontFamily: 'Inter, sans-serif', border: '1px solid rgba(0,0,0,0.06)',
                     }}>
                         {/* Close button */}
-                        <button onClick={() => setIsSimulating(false)} style={{
-                            width: 42, height: 42, borderRadius: '50%',
-                            border: '1px solid #e2e8f0', background: '#fff',
-                            color: '#64748b', fontSize: 16, cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)', flexShrink: 0,
-                        }}>✕</button>
+                        <button 
+                            onClick={() => {
+                                setIsSimulating(false);
+                                if (setSimFinished) setSimFinished(false);
+                                if (setSimIndex) setSimIndex(0);
+                            }} 
+                            style={{
+                                width: 42, height: 42, borderRadius: '50%',
+                                border: '1px solid #e2e8f0', background: '#fff',
+                                color: '#64748b', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.05)', flexShrink: 0,
+                                transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.borderColor = '#94a3b8'}
+                            onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
+                        >
+                            <X size={18} />
+                        </button>
 
                         {/* Center: ETA info */}
                         <div style={{ textAlign: 'center', flex: 1, padding: '0 12px' }}>
@@ -292,7 +343,13 @@ export default function MapView({ nodes, graphEdges, results, activeRoute, start
                                 <span style={{ fontSize: 22, fontWeight: 900, color: simFinished ? '#059669' : '#065f46' }}>
                                     {simFinished ? 'Tiba' : `${hudData.remMin} min`}
                                 </span>
-                                {!simFinished && <span style={{ fontSize: 14 }}>🟢</span>}
+                                {!simFinished && (
+                                    <span style={{
+                                        display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+                                        background: '#10b981', marginLeft: 6,
+                                        animation: 'pulse-dot 1.2s infinite ease-in-out',
+                                    }} />
+                                )}
                             </div>
                             <div style={{ fontSize: 12, color: '#64748b', fontWeight: 500, marginTop: 2 }}>
                                 {simFinished
@@ -302,15 +359,27 @@ export default function MapView({ nodes, graphEdges, results, activeRoute, start
                             </div>
                         </div>
 
-                        {/* Right: Simulation badge */}
-                        <div style={{
-                            padding: '6px 12px', borderRadius: 12,
-                            border: `1.5px solid ${simFinished ? '#059669' : '#10b981'}`,
-                            background: simFinished ? '#ecfdf5' : '#f0fdf4',
-                            color: '#065f46', fontSize: 11, fontWeight: 700, flexShrink: 0,
-                        }}>
-                            🚗 {simFinished ? 'Selesai' : 'Simulasi'}
-                        </div>
+                        {/* Right: Simulation badge/button */}
+                        <button 
+                            onClick={() => {
+                                setIsSimulating(false);
+                                if (setSimFinished) setSimFinished(false);
+                                if (setSimIndex) setSimIndex(0);
+                            }}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 6,
+                                padding: '8px 14px', borderRadius: 12,
+                                border: `1.5px solid ${simFinished ? '#059669' : '#10b981'}`,
+                                background: simFinished ? '#ecfdf5' : '#f0fdf4',
+                                color: '#065f46', fontSize: 11, fontWeight: 700, flexShrink: 0,
+                                cursor: 'pointer', outline: 'none', transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        >
+                            <Car size={14} color={simFinished ? '#059669' : '#10b981'} />
+                            <span>{simFinished ? 'Selesai' : 'Simulasi'}</span>
+                        </button>
                     </div>
                 </>
             )}

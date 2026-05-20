@@ -164,6 +164,7 @@ export default function RouteFinder({ nodes, edges }) {
                         isSimulating={isSimulating} setIsSimulating={setIsSimulating}
                         simIndex={simIndex} activePath={activeAnimationPath}
                         activeNodeIndex={activeNodeIndex} simFinished={simFinished}
+                        setSimFinished={setSimFinished} setSimIndex={setSimIndex}
                     />
                 </div>
             </div>

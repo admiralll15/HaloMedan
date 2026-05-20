@@ -1,4 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { 
+    Search, MapPin, Navigation, Compass, Star, Utensils, 
+    RefreshCw, Play, Square, AlertTriangle, CheckCircle, 
+    Check, Car, HelpCircle, Globe 
+} from 'lucide-react';
 
 const ALGOS = [
     { id: 'ucs', label: 'Uniform Cost Search', color: '#059669' },
@@ -220,14 +225,14 @@ export default function Sidebar({
                                     </>
                                 ) : userGpsLocation ? (
                                     <>
-                                        <div style={{ fontSize: 40, marginBottom: 12 }}>📍</div>
+                                        <MapPin size={40} color="#059669" style={{ marginBottom: 12 }} />
                                         <div style={{ fontSize: 14, fontWeight: 600, color: '#059669' }}>Lokasi Terdeteksi</div>
                                         <div style={{ fontSize: 12, marginTop: 4, maxWidth: 280, lineHeight: 1.5, color: '#475569' }}>{userGpsLocation.name}</div>
                                         <div style={{ fontSize: 12, marginTop: 12, color: '#94a3b8', maxWidth: 280, lineHeight: 1.5 }}>Cari tujuan di atas, lalu klik <b>Rute</b> untuk melihat perbandingan algoritma navigasi.</div>
                                     </>
                                 ) : (
                                     <>
-                                        <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+                                        <Search size={40} color="#94a3b8" style={{ marginBottom: 12 }} />
                                         <div style={{ fontSize: 14, fontWeight: 600, color: '#475569' }}>Cari Lokasi di Medan</div>
                                         <div style={{ fontSize: 12, marginTop: 4, maxWidth: 280, lineHeight: 1.5 }}>Ketikkan nama jalan, kampus, mall, atau lokasi lainnya di Medan pada kolom pencarian di atas.</div>
                                     </>
@@ -254,26 +259,33 @@ export default function Sidebar({
                                                 <h4 style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', margin: '0 0 4px 0' }}>{parsedName}</h4>
                                                 
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#64748b' }}>
-                                                    <span style={{ fontWeight: 600, color: '#d97706' }}>{details.rating}</span>
-                                                    <div style={{ display: 'flex', gap: 1 }}>
-                                                        {Array.from({ length: 5 }).map((_, i) => (
-                                                            <span key={i} style={{ color: i < Math.floor(details.rating) ? '#f59e0b' : '#cbd5e1' }}>★</span>
-                                                        ))}
-                                                    </div>
-                                                    <span>({details.reviews})</span>
-                                                    <span>•</span>
-                                                    <span>{details.type}</span>
-                                                </div>
+                                                     <span style={{ fontWeight: 600, color: '#d97706' }}>{details.rating}</span>
+                                                     <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                                         {Array.from({ length: 5 }).map((_, i) => (
+                                                             <Star 
+                                                                 key={i} 
+                                                                 size={11} 
+                                                                 fill={i < Math.floor(details.rating) ? '#f59e0b' : 'transparent'} 
+                                                                 stroke={i < Math.floor(details.rating) ? '#f59e0b' : '#cbd5e1'} 
+                                                             />
+                                                         ))}
+                                                     </div>
+                                                     <span>({details.reviews})</span>
+                                                     <span>•</span>
+                                                     <span>{details.type}</span>
+                                                 </div>
 
-                                                <p style={{ fontSize: 11, color: '#94a3b8', margin: '6px 0 0 0', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                                                    📍 {parsedAddress || 'Kota Medan, Sumatera Utara'}
-                                                </p>
-                                                <p style={{ fontSize: 11, color: '#64748b', margin: '4px 0 0 0' }}>
-                                                    🍽️ {details.features}
-                                                </p>
+                                                 <p style={{ fontSize: 11, color: '#94a3b8', margin: '6px 0 0 0', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                     <MapPin size={11} color="#94a3b8" />
+                                                     <span>{parsedAddress || 'Kota Medan, Sumatera Utara'}</span>
+                                                 </p>
+                                                 <p style={{ fontSize: 11, color: '#64748b', margin: '4px 0 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                     <Compass size={11} color="#64748b" />
+                                                     <span>{details.features}</span>
+                                                 </p>
                                             </div>
 
-                                            <div style={{ display: 'flex', gap: 8, borderTop: '1px solid #f1f5f9', paddingTop: 10 }}>
+                                            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 10 }}>
                                                 <button 
                                                     onClick={() => handleRouteSelect(place)}
                                                     style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 12px', borderRadius: 20, border: 'none', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s' }}
@@ -283,17 +295,6 @@ export default function Sidebar({
                                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
                                                     Rute
                                                 </button>
-                                                <a 
-                                                    href="https://google.com" 
-                                                    target="_blank" 
-                                                    rel="noopener noreferrer"
-                                                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 12px', borderRadius: 20, border: '1px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 600, textDecoration: 'none', transition: 'background 0.2s' }}
-                                                    onMouseOver={e => e.currentTarget.style.background = '#f8fafc'}
-                                                    onMouseOut={e => e.currentTarget.style.background = '#fff'}
-                                                >
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                                                    Situs Web
-                                                </a>
                                             </div>
                                         </div>
                                     );
@@ -337,11 +338,11 @@ export default function Sidebar({
                                 />
                             </div>
 
-                            <button 
+                             <button 
                                 onClick={handleSwapNodes}
                                 style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}
                             >
-                                🔄
+                                <RefreshCw size={14} />
                             </button>
                         </div>
                     </div>
@@ -365,7 +366,11 @@ export default function Sidebar({
                             <div style={{ display: 'flex', gap: 10 }}>
                                 <button type="submit" disabled={loading || !startNode || !goalNode || !selAlgos.length}
                                     style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: 'none', background: loading ? '#94a3b8' : 'linear-gradient(135deg,#059669,#10b981)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: loading ? 'none' : '0 2px 8px rgba(5,150,105,0.3)' }}>
-                                    {loading ? 'Menghitung...' : '🔍 Cari Rute'}
+                                    {loading ? 'Menghitung...' : (
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <Search size={14} /> Cari Rute
+                                        </span>
+                                    )}
                                 </button>
                                 <button type="button" onClick={handleResetDirections} style={{ padding: '12px 16px', borderRadius: 10, border: '1.5px solid #e2e8f0', background: '#fff', color: '#64748b', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Reset</button>
                             </div>
@@ -375,7 +380,17 @@ export default function Sidebar({
                         {showResults && results.length > 0 && results[activeRoute]?.found && (
                             <div style={{ marginTop: 24, padding: 16, borderRadius: 12, border: `1.5px solid ${simFinished ? '#05966940' : '#2563eb30'}`, background: simFinished ? '#05966908' : '#2563eb05', display: 'flex', flexDirection: 'column', gap: 12 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>{simFinished ? '✅ Demo Selesai' : '🚗 Demo Perjalanan'}</span>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        {simFinished ? (
+                                            <>
+                                                <CheckCircle size={14} color="#059669" /> Demo Selesai
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Car size={14} color="#2563eb" /> Demo Perjalanan
+                                            </>
+                                        )}
+                                    </span>
                                     <span style={{ fontSize: 11, fontWeight: 600, color: simFinished ? '#059669' : '#2563eb', background: simFinished ? '#ecfdf5' : '#e0f2fe', padding: '2px 8px', borderRadius: 99 }}>
                                         {simFinished ? 'Tiba di Tujuan' : animPath.length > 0 ? `${Math.round(((simIndex + 1) / animPath.length) * 100)}%` : '0%'}
                                     </span>
@@ -390,7 +405,7 @@ export default function Sidebar({
                                         onClick={() => { setSimFinished(false); setSimIndex(0); }}
                                         style={{ width: '100%', padding: '10px 14px', borderRadius: 20, border: 'none', background: '#059669', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}
                                     >
-                                        <span style={{ fontSize: 12 }}>🔄</span> Ulangi Demo
+                                        <RefreshCw size={14} /> Ulangi Demo
                                     </button>
                                 ) : (
                                     <button 
@@ -398,9 +413,9 @@ export default function Sidebar({
                                         style={{ width: '100%', padding: '10px 14px', borderRadius: 20, border: 'none', background: isSimulating ? '#dc2626' : '#2563eb', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}
                                     >
                                         {isSimulating ? (
-                                            <><span style={{ fontSize: 12 }}>⏹️</span> Hentikan Demo</>
+                                            <><Square size={12} fill="currentColor" /> Hentikan Demo</>
                                         ) : (
-                                            <><span style={{ fontSize: 12 }}>▶️</span> Demo Perjalanan Rute</>
+                                            <><Play size={12} fill="currentColor" /> Demo Perjalanan Rute</>
                                         )}
                                     </button>
                                 )}
@@ -415,7 +430,9 @@ export default function Sidebar({
 
                         {showResults && results.length > 0 && !results[activeRoute]?.found && (
                             <div style={{ marginTop: 24, padding: 16, borderRadius: 12, border: '1.5px solid #ef444430', background: '#fef2f2', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: '#b91c1c' }}>⚠️ Rute Gagal Ditemukan</span>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#b91c1c', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <AlertTriangle size={14} color="#b91c1c" /> Rute Gagal Ditemukan
+                                </span>
                                 <span style={{ fontSize: 11, color: '#7f1d1d', lineHeight: 1.4 }}>
                                     Algoritma <b>{results[activeRoute]?.algorithm}</b> gagal menemukan rute menuju tujuan. 
                                     {results[activeRoute]?.message && ` Keterangan: ${results[activeRoute].message}`}
@@ -469,23 +486,23 @@ export default function Sidebar({
                                                         let subtitle = '';
                                                         
                                                         if (isFirst) {
-                                                            icon = '🟢'; iconColor = '#059669'; iconBg = '#ecfdf5';
+                                                            icon = <MapPin size={12} fill="#059669" color="#fff" />; iconColor = '#059669'; iconBg = '#ecfdf5';
                                                             stepTitle = `Mulai dari ${stepTitle}`;
                                                             subtitle = 'Titik awal keberangkatan Anda';
                                                         } else if (isLast) {
-                                                            icon = '📍'; iconColor = '#ef4444'; iconBg = '#fef2f2';
+                                                            icon = <MapPin size={12} fill="#ef4444" color="#fff" />; iconColor = '#ef4444'; iconBg = '#fef2f2';
                                                             stepTitle = `Tiba di tujuan: ${stepTitle}`;
                                                             subtitle = `Destinasi akhir • Total ${r.total_distance_km} km`;
                                                         } else if (isPassed) {
-                                                            icon = '✓'; iconColor = '#059669'; iconBg = '#ecfdf5';
+                                                            icon = <Check size={11} strokeWidth={3} />; iconColor = '#059669'; iconBg = '#ecfdf5';
                                                             stepTitle = `Lewati ${stepTitle}`;
                                                             subtitle = `✓ Sudah dilewati • ±${distFromPrev.toFixed(1)} km`;
                                                         } else if (isActiveStep) {
-                                                            icon = '🚗'; iconColor = '#2563eb'; iconBg = '#dbeafe';
+                                                            icon = <Car size={12} fill="#2563eb" color="#fff" />; iconColor = '#2563eb'; iconBg = '#dbeafe';
                                                             stepTitle = `Sedang melewati ${stepTitle}`;
                                                             subtitle = `Jarak ±${distFromPrev.toFixed(1)} km dari titik sebelumnya`;
                                                         } else {
-                                                            icon = '•'; iconColor = '#94a3b8'; iconBg = '#f1f5f9';
+                                                            icon = <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#94a3b8' }} />; iconColor = '#94a3b8'; iconBg = '#f1f5f9';
                                                             const nextNode = r.path[idx + 1];
                                                             stepTitle = `Lewati ${stepTitle}`;
                                                             subtitle = nextNode ? `Lanjut ke ${nextNode.name.split(',')[0]} • ±${distFromPrev.toFixed(1)} km` : `±${distFromPrev.toFixed(1)} km`;
@@ -567,7 +584,7 @@ function LocationSearch({ label, dotColor, placeholder, value, onChange, predefi
     const abortRef = useRef(null);
 
     useEffect(() => {
-        if (value) setQuery(value.source === 'gps' ? `📍 ${value.name}` : value.name);
+        if (value) setQuery(value.name);
         else setQuery('');
     }, [value]);
 
@@ -602,7 +619,7 @@ function LocationSearch({ label, dotColor, placeholder, value, onChange, predefi
         }, 300);
     };
 
-    const handleSelect = (item) => { onChange(item); setQuery(item.source === 'gps' ? `📍 ${item.name}` : item.name); setShow(false); };
+    const handleSelect = (item) => { onChange(item); setQuery(item.name); setShow(false); };
 
     return (
         <div ref={wrapperRef} style={{ position: 'relative' }}>
@@ -610,9 +627,14 @@ function LocationSearch({ label, dotColor, placeholder, value, onChange, predefi
                 {dotColor && <span style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, display: 'inline-block' }} />}
                 {label}
             </div>
-            <input type="text" value={query} onChange={(e) => search(e.target.value)} onFocus={() => setShow(true)} placeholder={placeholder}
-                style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e2e8f0', background: value?.source === 'gps' ? '#ecfdf5' : '#fff', fontSize: 13, color: '#334155', outline: 'none', fontFamily: 'Inter,sans-serif' }}
-            />
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div style={{ position: 'absolute', left: 10, color: value?.source === 'gps' ? '#059669' : '#94a3b8', display: 'flex', alignItems: 'center', pointerEvents: 'none' }}>
+                    {value?.source === 'gps' ? <MapPin size={14} fill="#059669" color="#fff" /> : <Search size={14} />}
+                </div>
+                <input type="text" value={query} onChange={(e) => search(e.target.value)} onFocus={() => setShow(true)} placeholder={placeholder}
+                    style={{ width: '100%', padding: '10px 12px 10px 30px', borderRadius: 10, border: '1.5px solid #e2e8f0', background: value?.source === 'gps' ? '#ecfdf5' : '#fff', fontSize: 13, color: '#334155', outline: 'none', fontFamily: 'Inter,sans-serif', transition: 'all 0.2s' }}
+                />
+            </div>
             
             {show && (
                 <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, marginTop: 4, zIndex: 50, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxHeight: 250, overflowY: 'auto' }}>
@@ -622,7 +644,9 @@ function LocationSearch({ label, dotColor, placeholder, value, onChange, predefi
                             style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, transition: 'background 0.2s' }}
                             onMouseOver={e => e.currentTarget.style.background = '#ecfdf5'}
                             onMouseOut={e => e.currentTarget.style.background = '#fff'}>
-                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#ecfdf5', border: '1.5px solid #059669', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>📍</div>
+                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#ecfdf5', border: '1.5px solid #059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <MapPin size={14} color="#059669" fill="#059669" />
+                            </div>
                             <div>
                                 <div style={{ fontSize: 13, fontWeight: 700, color: '#059669' }}>Lokasi Anda</div>
                                 <div style={{ fontSize: 10, color: '#64748b', marginTop: 1 }}>{userGpsLocation.name}</div>
