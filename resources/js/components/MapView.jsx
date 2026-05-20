@@ -8,13 +8,29 @@ const DEFAULT_CENTER = [3.59, 98.67];
 const DEFAULT_ZOOM = 12;
 const ETA_SPEED_KMH = 30; // Neutral city driving speed for ETA
 
-function ChangeView({ center, zoom, bounds }) {
+function ChangeView({ center, zoom, bounds, isSimulating }) {
     const map = useMap();
+    const wasSimulatingRef = React.useRef(false);
+
     useEffect(() => {
-        if (bounds?.length > 0) {
-            try { map.fitBounds(bounds, { padding: [50, 50], animate: true, duration: 0.8 }); } catch {}
-        } else if (center) { map.setView(center, zoom || map.getZoom(), { animate: true, duration: 0.8 }); }
-    }, [center, zoom, bounds]);
+        if (isSimulating && center) {
+            if (!wasSimulatingRef.current) {
+                // Just started simulating: zoom in smoothly once
+                map.setView(center, 16, { animate: true, duration: 0.5 });
+                wasSimulatingRef.current = true;
+            } else {
+                // Ongoing simulation: pan instantly to keep up with coordinates
+                map.setView(center, map.getZoom(), { animate: false });
+            }
+        } else {
+            wasSimulatingRef.current = false;
+            if (bounds?.length > 0) {
+                try { map.fitBounds(bounds, { padding: [50, 50], animate: true, duration: 0.8 }); } catch {}
+            } else if (center) {
+                map.setView(center, zoom || map.getZoom(), { animate: true, duration: 0.8 });
+            }
+        }
+    }, [center, zoom, bounds, isSimulating]);
     return null;
 }
 
@@ -41,6 +57,38 @@ export default function MapView({ nodes, graphEdges, results, activeRoute, start
         const dy = nxt[0] - cur[0], dx = nxt[1] - cur[1];
         if (Math.abs(dy) < 1e-6 && Math.abs(dx) < 1e-6) return 0;
         return Math.atan2(dx, dy) * (180 / Math.PI);
+    }, [isSimulating, simFinished, activePath, simIndex]);
+
+    // Dynamic speed calculations
+    const currentSpeed = useMemo(() => {
+        if (simFinished || !isSimulating) return 0;
+        if (!activePath || activePath.length <= 1) return 0;
+
+        const cur = activePath[simIndex];
+        const next = activePath[Math.min(simIndex + 1, activePath.length - 1)];
+        if (!cur || !next) return 0;
+
+        const R = 6371;
+        const dLat = (next[0] - cur[0]) * Math.PI / 180;
+        const dLon = (next[1] - cur[1]) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(cur[0]*Math.PI/180)*Math.cos(next[0]*Math.PI/180)*Math.sin(dLon/2)**2;
+        const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        const stepMs = activePath.length > 10 ? 80 : 1000;
+        const hours = stepMs / 3600000;
+
+        let calculatedSpeed = Math.round(distKm / hours);
+        if (isNaN(calculatedSpeed) || calculatedSpeed <= 0) calculatedSpeed = 0;
+
+        if (simIndex < 3) return Math.min(35, 10 + simIndex * 10);
+        if (simIndex >= activePath.length - 3) {
+            const stepsFromEnd = activePath.length - 1 - simIndex;
+            return Math.max(0, stepsFromEnd * 12);
+        }
+
+        if (calculatedSpeed < 15) return 18 + (simIndex % 5);
+        if (calculatedSpeed > 60) return 48 + (simIndex % 7);
+        return calculatedSpeed;
     }, [isSimulating, simFinished, activePath, simIndex]);
 
     const startCoords = useMemo(() => {
@@ -115,7 +163,7 @@ export default function MapView({ nodes, graphEdges, results, activeRoute, start
 
             <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} style={{ width: '100%', height: '100%' }} zoomControl={!isSimulating}>
                 <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                {(mapCenter || activeBounds) && <ChangeView center={mapCenter} zoom={currentSimPosition ? 16 : 12} bounds={activeBounds} />}
+                {(mapCenter || activeBounds) && <ChangeView center={mapCenter} zoom={currentSimPosition ? 16 : 12} bounds={activeBounds} isSimulating={isSimulating} />}
 
                 {graphEdges.map((edge, i) => <Polyline key={`edge-${i}`} positions={[edge.from, edge.to]} pathOptions={{ color: '#cbd5e1', weight: 1.5, opacity: 0.5 }} />)}
 
@@ -216,7 +264,7 @@ export default function MapView({ nodes, graphEdges, results, activeRoute, start
                         fontFamily: 'Inter, sans-serif',
                     }}>
                         <span style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>
-                            {simFinished ? '0' : ETA_SPEED_KMH}
+                            {currentSpeed}
                         </span>
                         <span style={{ fontSize: 7, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', marginTop: 1 }}>km/h</span>
                     </div>

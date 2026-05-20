@@ -256,6 +256,13 @@ class RouteService
         while ($currentNode !== $goalId) {
             $nodesVisited++;
 
+            $currentHeuristic = self::haversine(
+                $this->nodeMap[$currentNode]->latitude,
+                $this->nodeMap[$currentNode]->longitude,
+                $goalNode->latitude,
+                $goalNode->longitude
+            );
+
             $neighbors = $this->adjacencyList[$currentNode] ?? [];
 
             if (empty($neighbors)) {
@@ -285,8 +292,8 @@ class RouteService
                 }
             }
 
-            if ($bestNeighbor === null) {
-                // Stuck - no unvisited neighbors
+            // In Hill Climbing: stop if the best neighbor does not improve (is not closer to the goal than current node)
+            if ($bestNeighbor === null || $bestHeuristic >= $currentHeuristic) {
                 $endTime = microtime(true);
                 return $this->buildResult(
                     'Hill Climbing',
@@ -295,7 +302,9 @@ class RouteService
                     $nodesVisited,
                     ($endTime - $startTime) * 1000,
                     false,
-                    'Terjebak di lokal optimum (tidak ada tetangga yang belum dikunjungi)'
+                    $bestNeighbor === null 
+                        ? 'Terjebak di lokal optimum (tidak ada tetangga yang belum dikunjungi)' 
+                        : 'Terjebak di lokal optimum (semua tetangga lebih jauh dari tujuan)'
                 );
             }
 

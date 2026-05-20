@@ -372,7 +372,7 @@ export default function Sidebar({
                         </form>
 
                         {/* Demo Perjalanan Rute */}
-                        {showResults && results.length > 0 && (
+                        {showResults && results.length > 0 && results[activeRoute]?.found && (
                             <div style={{ marginTop: 24, padding: 16, borderRadius: 12, border: `1.5px solid ${simFinished ? '#05966940' : '#2563eb30'}`, background: simFinished ? '#05966908' : '#2563eb05', display: 'flex', flexDirection: 'column', gap: 12 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <span style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>{simFinished ? '✅ Demo Selesai' : '🚗 Demo Perjalanan'}</span>
@@ -410,6 +410,16 @@ export default function Sidebar({
                                         Rute: <b>{startNode?.name?.split(',')[0]}</b> → <b>{goalNode?.name?.split(',')[0]}</b>
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        {showResults && results.length > 0 && !results[activeRoute]?.found && (
+                            <div style={{ marginTop: 24, padding: 16, borderRadius: 12, border: '1.5px solid #ef444430', background: '#fef2f2', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#b91c1c' }}>⚠️ Rute Gagal Ditemukan</span>
+                                <span style={{ fontSize: 11, color: '#7f1d1d', lineHeight: 1.4 }}>
+                                    Algoritma <b>{results[activeRoute]?.algorithm}</b> gagal menemukan rute menuju tujuan. 
+                                    {results[activeRoute]?.message && ` Keterangan: ${results[activeRoute].message}`}
+                                </span>
                             </div>
                         )}
 

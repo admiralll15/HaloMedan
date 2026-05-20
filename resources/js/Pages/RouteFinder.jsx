@@ -73,8 +73,8 @@ export default function RouteFinder({ nodes, edges }) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken || '' },
                 body: JSON.stringify({
-                    start: { lat: startObj.lat, lng: startObj.lng, name: startObj.name },
-                    goal: { lat: goalObj.lat, lng: goalObj.lng, name: goalObj.name },
+                    start: { lat: startObj.latitude ?? startObj.lat, lng: startObj.longitude ?? startObj.lng, name: startObj.name },
+                    goal: { lat: goalObj.latitude ?? goalObj.lat, lng: goalObj.longitude ?? goalObj.lng, name: goalObj.name },
                     algorithms,
                 }),
             });
